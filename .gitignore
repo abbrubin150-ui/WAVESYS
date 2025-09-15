@@ -1,0 +1,35 @@
+# HDL tool generated files
+*.jou
+*.log
+*.wdb
+*.pb
+*.dcp
+*.bit
+*.rpt
+*.str
+*.xpr
+*.qpf
+*.qsf
+*.srf
+*.vcd
+*.saif
+
+# Vivado/Quartus/Modelsim project folders
+.cache/
+.hw/
+.ip_user_files/
+.sim/
+.runs/
+.gen/
+
+# Build and simulation outputs
+build/
+sim/
+
+# Generated waves and checkpoints
+waves/
+checkpoints/
+
+# Temporary files
+*.tmp
+*.bak
