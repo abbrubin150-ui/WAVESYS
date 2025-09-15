@@ -1,0 +1,206 @@
+name: RTL Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Lint RTL with Verilator
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Verilator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator
+
+      - name: Run Verilator lint
+        run: |
+          verilator --version
+          verilator --lint-only --sv -Wall \
+            --Wno-MULTITOP --Wno-UNUSED --Wno-UNDRIVEN rtl/*.sv
+
+  simulation:
+    name: Build and run simulation
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Verilator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator
+
+      - name: Build Verilator model
+        run: |
+          cat <<'CPP' > sim_main.cpp
+          #include "Vime_top.h"
+          #include "verilated.h"
+          #if VM_COVERAGE
+          # include "verilated_cov.h"
+          #endif
+
+          static void drive_idle_inputs(Vime_top* top) {
+              top->s_axi_awaddr = 0;
+              top->s_axi_awvalid = 0;
+              top->s_axi_wdata = 0;
+              top->s_axi_wstrb = 0;
+              top->s_axi_wvalid = 0;
+              top->s_axi_bready = 0;
+              top->s_axi_araddr = 0;
+              top->s_axi_arvalid = 0;
+              top->s_axi_rready = 0;
+
+              top->s_axis_tdata = 0;
+              top->s_axis_tuser = 0;
+              top->s_axis_tvalid = 0;
+              top->s_axis_tlast = 0;
+
+              top->m_axis_tready = 1;
+          }
+
+          static void tick(Vime_top* top, vluint64_t& time) {
+              top->clk = 0;
+              top->eval();
+              ++time;
+              top->clk = 1;
+              top->eval();
+              ++time;
+          }
+
+          int main(int argc, char** argv) {
+              Verilated::commandArgs(argc, argv);
+              vluint64_t time = 0;
+              Vime_top top;
+
+              drive_idle_inputs(&top);
+              top.rst_n = 0;
+              for (int i = 0; i < 5; ++i) {
+                  tick(&top, time);
+              }
+
+              top.rst_n = 1;
+              for (int i = 0; i < 10; ++i) {
+                  drive_idle_inputs(&top);
+                  tick(&top, time);
+              }
+
+              top.final();
+          #if VM_COVERAGE
+              VerilatedCov::write("coverage.dat");
+          #endif
+              return 0;
+          }
+          CPP
+
+          verilator -Wall --sv \
+            --Wno-MULTITOP --Wno-UNUSED --Wno-UNDRIVEN \
+            --cc rtl/*.sv --top-module ime_top --exe sim_main.cpp
+          make -C obj_dir -f Vime_top.mk
+
+      - name: Run simulation smoke test
+        run: ./obj_dir/Vime_top
+
+  coverage:
+    name: Collect coverage data
+    runs-on: ubuntu-latest
+    needs: simulation
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Verilator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator
+
+      - name: Build with coverage enabled
+        run: |
+          cat <<'CPP' > sim_main.cpp
+          #include "Vime_top.h"
+          #include "verilated.h"
+          #if VM_COVERAGE
+          # include "verilated_cov.h"
+          #endif
+
+          static void drive_idle_inputs(Vime_top* top) {
+              top->s_axi_awaddr = 0;
+              top->s_axi_awvalid = 0;
+              top->s_axi_wdata = 0;
+              top->s_axi_wstrb = 0;
+              top->s_axi_wvalid = 0;
+              top->s_axi_bready = 0;
+              top->s_axi_araddr = 0;
+              top->s_axi_arvalid = 0;
+              top->s_axi_rready = 0;
+
+              top->s_axis_tdata = 0;
+              top->s_axis_tuser = 0;
+              top->s_axis_tvalid = 0;
+              top->s_axis_tlast = 0;
+
+              top->m_axis_tready = 1;
+          }
+
+          static void tick(Vime_top* top, vluint64_t& time) {
+              top->clk = 0;
+              top->eval();
+              ++time;
+              top->clk = 1;
+              top->eval();
+              ++time;
+          }
+
+          int main(int argc, char** argv) {
+              Verilated::commandArgs(argc, argv);
+              vluint64_t time = 0;
+              Vime_top top;
+
+              drive_idle_inputs(&top);
+              top.rst_n = 0;
+              for (int i = 0; i < 5; ++i) {
+                  tick(&top, time);
+              }
+
+              top.rst_n = 1;
+              for (int i = 0; i < 10; ++i) {
+                  drive_idle_inputs(&top);
+                  tick(&top, time);
+              }
+
+              top.final();
+          #if VM_COVERAGE
+              VerilatedCov::write("coverage.dat");
+          #endif
+              return 0;
+          }
+          CPP
+
+          verilator -Wall --sv \
+            --Wno-MULTITOP --Wno-UNUSED --Wno-UNDRIVEN \
+            --cc rtl/*.sv --top-module ime_top --exe sim_main.cpp --coverage
+          make -C obj_dir -f Vime_top.mk
+
+      - name: Run coverage simulation
+        run: ./obj_dir/Vime_top
+
+      - name: Generate coverage report
+        run: |
+          verilator_coverage --write-info coverage.info coverage.dat
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: verilator-coverage
+          path: |
+            coverage.dat
+            coverage.info

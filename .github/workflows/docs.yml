@@ -1,0 +1,95 @@
+name: Documentation Build
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install documentation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install markdown
+
+      - name: Build static documentation
+        run: |
+          python - <<'PY'
+          import pathlib
+          import markdown
+
+          docs_dir = pathlib.Path('docs')
+          output_dir = pathlib.Path('site')
+          output_dir.mkdir(parents=True, exist_ok=True)
+
+          for md_file in docs_dir.glob('*.md'):
+              html = markdown.markdown(md_file.read_text(encoding='utf-8'), extensions=['extra', 'toc'])
+              (output_dir / (md_file.stem + '.html')).write_text(html, encoding='utf-8')
+          PY
+
+      - name: Verify CSR table formatting
+        run: |
+          python - <<'PY'
+          import pathlib
+          import sys
+
+          csr_path = pathlib.Path('docs/CSR_Map.md')
+          if not csr_path.exists():
+              sys.exit('CSR map document is missing.')
+
+          tables = []
+          current = []
+          for line in csr_path.read_text(encoding='utf-8').splitlines():
+              stripped = line.strip()
+              if stripped.startswith('|'):
+                  current.append(stripped)
+              else:
+                  if current:
+                      tables.append(current)
+                      current = []
+          if current:
+              tables.append(current)
+
+          def check_table(rows, index):
+              header_cells = [cell.strip() for cell in rows[0].strip('|').split('|')]
+              col_count = len(header_cells)
+              if col_count < 2:
+                  sys.exit(f'CSR table {index} must define at least two columns.')
+
+              if len(rows) > 1:
+                  separator_cells = [cell.strip() for cell in rows[1].strip('|').split('|')]
+                  if len(separator_cells) != col_count:
+                      sys.exit(f'CSR table {index} separator must match header column count.')
+                  for cell in separator_cells:
+                      cleaned = cell.replace('-', '').replace(':', '')
+                      if cleaned:
+                          sys.exit(f'CSR table {index} separator cells must contain only hyphens and optional colons.')
+
+              for row_idx, row in enumerate(rows[1:], start=2):
+                  row_cells = [cell.strip() for cell in row.strip('|').split('|')]
+                  if len(row_cells) != col_count:
+                      sys.exit(f'CSR table {index} row {row_idx} does not match header column count.')
+
+          for idx, table in enumerate(tables, start=1):
+              check_table(table, idx)
+
+          print(f'Checked {len(tables)} CSR table block(s).')
+          PY
+
+      - name: Upload documentation artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
