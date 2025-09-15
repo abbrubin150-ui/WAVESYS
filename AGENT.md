@@ -9,7 +9,7 @@ This guide instructs an autonomous agent on how to take the frozen IME specifica
 1. **Create Repository**
 
    * Name: `ime-freeze-pack-v0`
-   * License: Apache 2.0
+   * License: MIT
    * Branches: `main` (protected), `dev` (default working branch).
 
 2. **Initialize with Templates**
