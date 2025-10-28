@@ -166,8 +166,8 @@ module ime_top #(
   assign poison_flag   = status_poison_flag;
   assign bist_status   = status_bist_status;
 
-  // TODO: error_flags accumulation from pipeline stages
-  assign status_error_flags = 4'h0;
+  // error_flags are accumulated in CSR block via sticky OR with pipeline flags
+  assign status_error_flags = 4'h0;  // Placeholder - future: collect from pipeline stages
   assign status_poison_flag = s3_poison;
 
   // =========================================================================
