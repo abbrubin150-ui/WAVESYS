@@ -63,7 +63,7 @@ module ime_bist #(
   function automatic logic [15:0] clamp_frame_len(input logic [15:0] cfg_len);
     logic [15:0] limit;
     logic [15:0] result;
-    limit  = logic [15:0]'(BIST_DEPTH);
+    limit  = 16'(BIST_DEPTH);
     result = cfg_len;
     if (result == 16'd0) begin
       result = limit;
@@ -100,28 +100,28 @@ module ime_bist #(
     case (sel)
       3'd0: begin // Uniform
         case (ridx)
-          2'd0: vect = '{prob_p: logic [W_P-1:0]'(16'd1024), prob_q: logic [W_P-1:0]'(16'd1024), score: logic [W_LOG-1:0]'(16'd2048)};
-          2'd1: vect = '{prob_p: logic [W_P-1:0]'(16'd1024), prob_q: logic [W_P-1:0]'(16'd2048), score: logic [W_LOG-1:0]'(16'd1536)};
-          2'd2: vect = '{prob_p: logic [W_P-1:0]'(16'd2048), prob_q: logic [W_P-1:0]'(16'd1024), score: logic [W_LOG-1:0]'(16'd1280)};
-          default: vect = '{prob_p: logic [W_P-1:0]'(16'd2048), prob_q: logic [W_P-1:0]'(16'd2048), score: logic [W_LOG-1:0]'(16'd1024)};
+          2'd0: vect = '{prob_p: W_P'(16'd1024), prob_q: W_P'(16'd1024), score: W_LOG'(16'd2048)};
+          2'd1: vect = '{prob_p: W_P'(16'd1024), prob_q: W_P'(16'd2048), score: W_LOG'(16'd1536)};
+          2'd2: vect = '{prob_p: W_P'(16'd2048), prob_q: W_P'(16'd1024), score: W_LOG'(16'd1280)};
+          default: vect = '{prob_p: W_P'(16'd2048), prob_q: W_P'(16'd2048), score: W_LOG'(16'd1024)};
         endcase
       end
       3'd1: begin // Dirac spike on p-channel
         case (ridx)
-          2'd0: vect = '{prob_p: logic [W_P-1:0]'(16'd4096), prob_q: logic [W_P-1:0]'(16'd128), score: logic [W_LOG-1:0]'(16'd4096)};
-          2'd1: vect = '{prob_p: logic [W_P-1:0]'(16'd64),   prob_q: logic [W_P-1:0]'(16'd128), score: logic [W_LOG-1:0]'(16'd256)};
-          default: vect = '{prob_p: logic [W_P-1:0]'(16'd32), prob_q: logic [W_P-1:0]'(16'd256), score: logic [W_LOG-1:0]'(16'd128)};
+          2'd0: vect = '{prob_p: W_P'(16'd4096), prob_q: W_P'(16'd128), score: W_LOG'(16'd4096)};
+          2'd1: vect = '{prob_p: W_P'(16'd64),   prob_q: W_P'(16'd128), score: W_LOG'(16'd256)};
+          default: vect = '{prob_p: W_P'(16'd32), prob_q: W_P'(16'd256), score: W_LOG'(16'd128)};
         endcase
       end
       3'd2: begin // Symmetric perturbation
         case (ridx)
-          2'd0: vect = '{prob_p: logic [W_P-1:0]'(16'd1536), prob_q: logic [W_P-1:0]'(16'd1664), score: logic [W_LOG-1:0]'(16'd1408)};
-          2'd1: vect = '{prob_p: logic [W_P-1:0]'(16'd1664), prob_q: logic [W_P-1:0]'(16'd1536), score: logic [W_LOG-1:0]'(16'd1344)};
-          default: vect = '{prob_p: logic [W_P-1:0]'(16'd1600), prob_q: logic [W_P-1:0]'(16'd1600), score: logic [W_LOG-1:0]'(16'd1312)};
+          2'd0: vect = '{prob_p: W_P'(16'd1536), prob_q: W_P'(16'd1664), score: W_LOG'(16'd1408)};
+          2'd1: vect = '{prob_p: W_P'(16'd1664), prob_q: W_P'(16'd1536), score: W_LOG'(16'd1344)};
+          default: vect = '{prob_p: W_P'(16'd1600), prob_q: W_P'(16'd1600), score: W_LOG'(16'd1312)};
         endcase
       end
       default: begin
-        vect = '{prob_p: logic [W_P-1:0]'(16'd0), prob_q: logic [W_P-1:0]'(16'd0), score: logic [W_LOG-1:0]'(16'd0)};
+        vect = '{prob_p: W_P'(16'd0), prob_q: W_P'(16'd0), score: W_LOG'(16'd0)};
       end
     endcase
     return vect;
@@ -130,9 +130,9 @@ module ime_bist #(
   function automatic logic [W_ACC-1:0] expected_lookup(input logic [2:0] sel);
     logic [W_ACC-1:0] result;
     case (sel)
-      3'd0: result = logic [W_ACC-1:0]'(32'd4096);
-      3'd1: result = logic [W_ACC-1:0]'(32'd8192);
-      3'd2: result = logic [W_ACC-1:0]'(32'd2048);
+      3'd0: result = W_ACC'(32'd4096);
+      3'd1: result = W_ACC'(32'd8192);
+      3'd2: result = W_ACC'(32'd2048);
       default: result = '0;
     endcase
     return result;
