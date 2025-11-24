@@ -59,6 +59,11 @@ module ime_acc_tree #(
   logic             out_poison_next;
   logic [16:0]      credit_next;
 
+  logic [W_ACC-1:0] sample_value;
+  logic [W_ACC-1:0] sum_value;
+  logic             frame_done;
+  logic [16:0]      credit_after_sample;
+
   logic [15:0]      frame_len_eff;
   logic [16:0]      frame_len_ext;
   logic [16:0]      count_ext;
@@ -91,6 +96,11 @@ module ime_acc_tree #(
       credit_next = 17'd65535;
     end
 
+    sample_value        = '0;
+    sum_value           = acc_reg;
+    frame_done          = 1'b0;
+    credit_after_sample = credit_next;
+
     if (out_valid_reg && out_ready) begin
       out_valid_next  = 1'b0;
       out_last_next   = 1'b0;
@@ -98,11 +108,6 @@ module ime_acc_tree #(
     end
 
     if (in_valid && in_ready) begin
-      logic [W_ACC-1:0] sample_value;
-      logic [W_ACC-1:0] sum_value;
-      logic             frame_done;
-      logic [16:0]      credit_after_sample;
-
       sample_value = in_partial_acc;
       sum_value    = (count_reg == 16'd0) ? sample_value : (acc_reg + sample_value);
 
