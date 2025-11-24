@@ -1,0 +1,1 @@
+{"ts": "2025-10-22T00:00:00Z", "intent": "ingest multi-scale LM objective spec", "execution": "added spec document under docs and linked from README", "outcome": "documentation available in repo", "delta": "new spec file", "decision": "EXECUTE"}
