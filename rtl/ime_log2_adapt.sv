@@ -93,6 +93,8 @@ module ime_log2_adapt #(
   logic             poison_reg;
   logic             stage_valid;
 
+  localparam int unsigned DELTA_EXT_PAD = (W_P + 1 > 16) ? (W_P + 1 - 16) : 0;
+
   logic [15:0]      delta_thresh_local;
   logic [W_P-1:0]   epsilon_q_local;
   logic [W_P:0]     delta_thresh_ext;
@@ -119,11 +121,7 @@ module ime_log2_adapt #(
       epsilon_q_local = epsilon_q[W_P-1:0];
     end
 
-    if (W_P + 1 >= 16) begin
-      delta_thresh_ext = {{(W_P+1-16){1'b0}}, delta_thresh_local};
-    end else begin
-      delta_thresh_ext = delta_thresh_local[W_P:0];
-    end
+    delta_thresh_ext = {{DELTA_EXT_PAD{1'b0}}, delta_thresh_local};
   end
 
   always_ff @(posedge clk or negedge rst_n) begin

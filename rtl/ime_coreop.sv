@@ -56,24 +56,15 @@ module ime_coreop #(
     return (mode != '0) && (masked == '0);
   endfunction
 
+  localparam int unsigned PROB_EXT_PAD = (W_ACC > W_P)   ? (W_ACC - W_P)   : 0;
+  localparam int unsigned LOG_EXT_PAD  = (W_ACC > W_LOG) ? (W_ACC - W_LOG) : 0;
+
   function automatic logic signed [W_ACC-1:0] extend_prob(input logic [W_P-1:0] value);
-    logic signed [W_ACC-1:0] result;
-    if (W_ACC > W_P) begin
-      result = $signed({{(W_ACC-W_P){1'b0}}, value});
-    end else begin
-      result = $signed(value[W_ACC-1:0]);
-    end
-    return result;
+    extend_prob = $signed({{PROB_EXT_PAD{1'b0}}, value});
   endfunction
 
   function automatic logic signed [W_ACC-1:0] extend_log(input logic [W_LOG-1:0] value);
-    logic signed [W_ACC-1:0] result;
-    if (W_ACC > W_LOG) begin
-      result = $signed({{(W_ACC-W_LOG){1'b0}}, value});
-    end else begin
-      result = $signed(value[W_ACC-1:0]);
-    end
-    return result;
+    extend_log = $signed({{LOG_EXT_PAD{1'b0}}, value});
   endfunction
 
   function automatic logic [W_ACC-1:0] compute_metric(

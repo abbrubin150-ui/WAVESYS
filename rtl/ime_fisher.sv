@@ -40,24 +40,15 @@ module ime_fisher #(
     return (mode != '0) && (masked == '0);
   endfunction
 
+  localparam int unsigned FISHER_PROB_PAD   = (W_ACC > W_P)      ? (W_ACC - W_P)      : 0;
+  localparam int unsigned FISHER_SQUARE_PAD = (W_ACC > 2*W_LOG) ? (W_ACC - 2*W_LOG) : 0;
+
   function automatic logic signed [W_ACC-1:0] extend_prob(input logic [W_P-1:0] value);
-    logic signed [W_ACC-1:0] result;
-    if (W_ACC > W_P) begin
-      result = $signed({{(W_ACC-W_P){1'b0}}, value});
-    end else begin
-      result = $signed(value[W_ACC-1:0]);
-    end
-    return result;
+    extend_prob = $signed({{FISHER_PROB_PAD{1'b0}}, value});
   endfunction
 
   function automatic logic signed [W_ACC-1:0] extend_square(input logic [2*W_LOG-1:0] value);
-    logic signed [W_ACC-1:0] result;
-    if (W_ACC > 2*W_LOG) begin
-      result = $signed({{(W_ACC-2*W_LOG){1'b0}}, value});
-    end else begin
-      result = $signed(value[W_ACC-1:0]);
-    end
-    return result;
+    extend_square = $signed({{FISHER_SQUARE_PAD{1'b0}}, value});
   endfunction
 
   logic                   stage_valid;

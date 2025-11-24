@@ -77,14 +77,10 @@ module ime_bist #(
     return result;
   endfunction
 
+  localparam int unsigned TOL_EXT_PAD = (W_ACC > 8) ? (W_ACC - 8) : 0;
+
   function automatic logic [W_ACC-1:0] extend_tol(input logic [7:0] tol_value);
-    logic [W_ACC-1:0] result;
-    if (W_ACC > 8) begin
-      result = {{(W_ACC-8){1'b0}}, tol_value};
-    end else begin
-      result = tol_value[W_ACC-1:0];
-    end
-    return result;
+    extend_tol = {{TOL_EXT_PAD{1'b0}}, tol_value};
   endfunction
 
   function automatic bist_vector_t vect_lookup(
@@ -169,6 +165,9 @@ module ime_bist #(
   assign bist_status  = status_reg;
   assign poison_inject= poison_reg;
 
+  logic [W_ACC-1:0]     diff_value;
+  logic                 mismatch;
+
   always_comb begin
     state_next      = state_reg;
     index_next      = index_reg;
@@ -177,6 +176,8 @@ module ime_bist #(
     expected_next   = expected_reg;
     status_next     = status_reg;
     poison_next     = poison_reg;
+    diff_value      = '0;
+    mismatch        = 1'b0;
 
     case (state_reg)
       ST_IDLE: begin
@@ -220,8 +221,6 @@ module ime_bist #(
           status_next = STATUS_IDLE;
           poison_next = 1'b0;
         end else if (obs_valid && obs_last) begin
-          logic [W_ACC-1:0] diff_value;
-          logic             mismatch;
           diff_value = (obs_acc >= expected_reg) ? (obs_acc - expected_reg) : (expected_reg - obs_acc);
           mismatch   = (obs_tuser[7:5] != vect_sel_reg) || (obs_tuser[4:0] != last_index[4:0]);
           if (!mismatch && diff_value <= tol_ext) begin
