@@ -10,6 +10,7 @@ The IME Freeze Pack v0.1 repository captures the baseline architecture, interfac
 - [Verification Strategy](docs/Verification.md)
 - [IP Claims Summary](docs/IP_Claims.md)
 - [Multi-Scale Language Model Objective (v2025.10)](docs/Multi_Scale_Language_Model_Objective_v2025.10-Final.md)
+- [Neuro-Lingua v4 Development Orders](docs/NeuroLingua_v4_Development_Orders.md)
 
 ## Repository Layout
 
