@@ -1,16 +1,28 @@
-# Information Metrics Engine (IME) Freeze Pack
+# Pixel Physics Sandbox
 
-The IME Freeze Pack v0.1 repository captures the baseline architecture, interfaces, and requirements for the Information Metrics Engine accelerator. It serves as a hand-off package for RTL, verification, and documentation teams to work from a frozen specification.
+Android-first 2.5D pixel-physics sandbox built without a 3D engine.
 
-## Documentation
+## Visual invariant
 
-- [IME Specification (Freeze Pack v0.1)](docs/IME_Spec_FreezePack_v0.1.md)
-- [Control and Status Register (CSR) Map](docs/CSR_Map.md)
-- [Processing Pipeline Notes](docs/Pipeline.md)
-- [Verification Strategy](docs/Verification.md)
-- [IP Claims Summary](docs/IP_Claims.md)
-- [Multi-Scale Language Model Objective (v2025.10)](docs/Multi_Scale_Language_Model_Objective_v2025.10-Final.md)
+The room art is the supplied reference composition, preserved as a nearest-neighbour 256×256 WebP so the app stays visually locked to the original pixel-art scene. Dynamic bodies are rendered on top in the same raster/isometric language.
 
-## Repository Layout
+## Physics model
 
-Planned directories include RTL skeletons, verification environments, formal collateral, and supporting figures as defined in the freeze pack roadmap. Additional content will be populated in subsequent revisions as the project is scaffolded.
+Bodies live on a 2D floor plane `(u, v)` plus scalar height `z`. Projection is isometric-like:
+
+- `x = originX + (u-v) * isoX`
+- `y = originY + (u+v) * isoY - z * isoZ`
+
+This gives depth, jumps, shadows and ordering without a 3D mesh/scene engine.
+
+## Controls
+
+- Drag an object: move it on the floor plane.
+- Release after dragging: throw it.
+- Tap empty floor: spawn a cube.
+- Hold empty floor: spawn a ball.
+- Double-tap an object: jump impulse.
+
+## Build
+
+GitHub Actions builds `app-debug.apk` and uploads it as the `pixel-physics-apk` artifact.
