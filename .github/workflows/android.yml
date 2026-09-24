@@ -31,14 +31,31 @@ jobs:
           arch: x86_64
           disable-animations: true
           script: |
+            set -eu
             adb install -r app/build/outputs/apk/release/app-release.apk
+            adb logcat -c
             adb shell am force-stop com.wavesys.pixelphysics
-            START_OUTPUT="$(adb shell am start -W -n com.wavesys.pixelphysics/com.wavesys.pixelphysics.MainActivity)"
-            echo "$START_OUTPUT"
-            echo "$START_OUTPUT" | grep -q "Status: ok"
+            adb shell monkey -p com.wavesys.pixelphysics -c android.intent.category.LAUNCHER 1
+            sleep 5
+
+            PID="$(adb shell pidof com.wavesys.pixelphysics | tr -d '\r')"
+            echo "Pixel Physics PID: $PID"
+            test -n "$PID"
+
+            adb shell dumpsys activity activities > /tmp/activities.txt
+            grep -E "com\.wavesys\.pixelphysics/(\.MainActivity|com\.wavesys\.pixelphysics\.MainActivity)" /tmp/activities.txt
+
+            adb logcat -d -b crash > /tmp/crash.txt || true
+            cat /tmp/crash.txt
+            if grep -q "com.wavesys.pixelphysics" /tmp/crash.txt; then
+              echo "Pixel Physics produced an Android crash record"
+              exit 1
+            fi
+
             sleep 3
-            adb shell pidof com.wavesys.pixelphysics
-            adb shell dumpsys activity activities | grep -q "com.wavesys.pixelphysics/.MainActivity"
+            PID2="$(adb shell pidof com.wavesys.pixelphysics | tr -d '\r')"
+            echo "Pixel Physics PID after stability window: $PID2"
+            test -n "$PID2"
       - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
