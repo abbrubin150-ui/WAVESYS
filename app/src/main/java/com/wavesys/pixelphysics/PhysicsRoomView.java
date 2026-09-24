@@ -42,6 +42,7 @@ public final class PhysicsRoomView extends View {
     private final ArrayList<Body> bodies = new ArrayList<>();
     private final RectF sceneRect = new RectF();
     private final Bitmap roomBitmap;
+    private Throwable fatalError = null;
 
     private long lastFrameNs = 0L;
     private Body held = null;
@@ -69,7 +70,7 @@ public final class PhysicsRoomView extends View {
         paint.setDither(false);
         roomBitmap = BitmapFactory.decodeResource(
                 getResources(),
-                getResources().getIdentifier("reference_room", "drawable", context.getPackageName())
+                R.drawable.reference_room
         );
 
         seedScene();
@@ -88,6 +89,20 @@ public final class PhysicsRoomView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        if (fatalError != null) {
+            drawFatal(canvas, fatalError);
+            return;
+        }
+
+        try {
+            renderFrame(canvas);
+        } catch (Throwable renderError) {
+            fatalError = renderError;
+            drawFatal(canvas, renderError);
+        }
+    }
+
+    private void renderFrame(Canvas canvas) {
         computeSceneRect();
 
         canvas.drawColor(Color.rgb(15, 20, 29));
@@ -115,6 +130,21 @@ public final class PhysicsRoomView extends View {
         canvas.restore();
 
         postInvalidateOnAnimation();
+    }
+
+    private void drawFatal(Canvas canvas, Throwable error) {
+        canvas.drawColor(Color.rgb(15, 20, 29));
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.WHITE);
+        paint.setTextAlign(Paint.Align.LEFT);
+        paint.setTypeface(android.graphics.Typeface.MONOSPACE);
+        paint.setTextSize(18f);
+        canvas.drawText("PIXEL PHYSICS - RENDER ERROR", 28f, 60f, paint);
+        paint.setTextSize(13f);
+        canvas.drawText(error.getClass().getSimpleName(), 28f, 90f, paint);
+        String message = String.valueOf(error.getMessage());
+        if (message.length() > 80) message = message.substring(0, 80);
+        canvas.drawText(message, 28f, 115f, paint);
     }
 
     private void computeSceneRect() {
@@ -366,6 +396,17 @@ public final class PhysicsRoomView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent e) {
+        if (fatalError != null) return true;
+        try {
+            return handleTouchEvent(e);
+        } catch (Throwable touchError) {
+            fatalError = touchError;
+            invalidate();
+            return true;
+        }
+    }
+
+    private boolean handleTouchEvent(MotionEvent e) {
         if (sceneRect.width() <= 0f) return true;
         float dx = (e.getX() - sceneRect.left) * DESIGN / sceneRect.width();
         float dy = (e.getY() - sceneRect.top) * DESIGN / sceneRect.height();
