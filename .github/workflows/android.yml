@@ -35,20 +35,30 @@ jobs:
             adb install -r app/build/outputs/apk/release/app-release.apk
             adb logcat -c
             adb shell am force-stop com.wavesys.pixelphysics
-            adb shell monkey -p com.wavesys.pixelphysics -c android.intent.category.LAUNCHER 1
-            sleep 5
+            adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n com.wavesys.pixelphysics/com.wavesys.pixelphysics.MainActivity 2>&1 | tee /tmp/start.txt || true
+            sleep 6
+
+            adb logcat -d > /tmp/logcat.txt || true
+            adb logcat -d -b crash > /tmp/crash.txt || true
 
             PID="$(adb shell pidof com.wavesys.pixelphysics | tr -d '\r')"
             echo "Pixel Physics PID: $PID"
-            test -n "$PID"
+            if [ -z "$PID" ]; then
+              echo "=== START OUTPUT ==="
+              cat /tmp/start.txt
+              echo "=== CRASH BUFFER ==="
+              cat /tmp/crash.txt
+              echo "=== RELEVANT LOGCAT ==="
+              grep -E "AndroidRuntime|FATAL EXCEPTION|com\.wavesys\.pixelphysics|Process: com\.wavesys\.pixelphysics" /tmp/logcat.txt | tail -n 200 || true
+              exit 1
+            fi
 
             adb shell dumpsys activity activities > /tmp/activities.txt
             grep -E "com\.wavesys\.pixelphysics/(\.MainActivity|com\.wavesys\.pixelphysics\.MainActivity)" /tmp/activities.txt
 
-            adb logcat -d -b crash > /tmp/crash.txt || true
-            cat /tmp/crash.txt
             if grep -q "com.wavesys.pixelphysics" /tmp/crash.txt; then
               echo "Pixel Physics produced an Android crash record"
+              cat /tmp/crash.txt
               exit 1
             fi
 
